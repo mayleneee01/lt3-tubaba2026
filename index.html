@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard Hasil Lomba LT III Tubaba 2026</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --maroon: #7b1a2a;
+  --maroon-dark: #5a1020;
+  --maroon-light: #9b2a3a;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --white: #ffffff;
+  --gray-50: #fafafa;
+  --gray-100: #f4f4f5;
+  --gray-200: #e4e4e7;
+  --gray-300: #d1d1d6;
+  --gray-500: #71717a;
+  --gray-700: #3f3f46;
+  --gray-900: #18181b;
+  --shadow: 0 2px 8px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:#f0e8ea;color:var(--gray-900)}
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* HEADER */
+header{background:linear-gradient(135deg,var(--maroon-dark) 0%,var(--maroon) 60%,var(--maroon-light) 100%);color:white;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M30 0l30 52H0z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;pointer-events:none}
+.header-inner{position:relative;z-index:1;display:flex;align-items:center;gap:16px;padding:16px 20px}
+.logo-area{display:flex;gap:10px;align-items:center;flex-shrink:0}
+.logo-box{width:52px;height:52px;background:rgba(255,255,255,0.12);border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-box i{font-size:22px;color:var(--gold)}
+.header-text{flex:1;min-width:0}
+.header-title{font-size:clamp(13px,2.5vw,18px);font-weight:800;letter-spacing:0.5px;text-transform:uppercase;line-height:1.2;color:white}
+.header-sub{font-size:clamp(10px,1.8vw,13px);color:var(--gold-light);margin-top:3px;line-height:1.3}
+.header-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap}
+.btn-hdr{border:none;padding:8px 14px;border-radius:20px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.btn-hdr-gold{background:var(--gold);color:var(--maroon-dark)}.btn-hdr-gold:hover{background:var(--gold-light)}
+.btn-hdr-danger{background:#dc2626;color:white}.btn-hdr-danger:hover{background:#b91c1c}
+.btn-hdr-ghost{background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3)}.btn-hdr-ghost:hover{background:rgba(255,255,255,0.25)}
+.gold-line{height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+
+/* NAV */
+nav{background:var(--maroon-dark);display:flex;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.nav-btn{flex:1;min-width:max-content;padding:12px 20px;color:rgba(255,255,255,0.65);background:none;border:none;font-size:12px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.nav-btn.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(255,255,255,0.05)}
+.nav-btn:hover:not(.active){color:white;background:rgba(255,255,255,0.08)}
+
+/* MAIN */
+main{flex:1;padding:16px;max-width:1400px;width:100%;margin:0 auto}
+
+/* CARD */
+.card{background:white;border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.card-header{background:linear-gradient(135deg,var(--maroon),var(--maroon-light));color:white;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-title{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:8px}
+.card-body{padding:16px}
+
+/* CATEGORY TABS */
+.cat-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.cat-tab{padding:7px 15px;border-radius:20px;border:2px solid var(--maroon);color:var(--maroon);background:white;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;transition:all .2s}
+.cat-tab.active{background:var(--maroon);color:white}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--gray-200)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--maroon);color:white;padding:10px 12px;text-align:left;font-weight:600;white-space:nowrap}
+tbody tr:nth-child(even){background:var(--gray-50)}
+tbody tr:hover{background:#fdf0f2}
+td{padding:9px 12px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+
+/* INPUTS */
+input[type=text],input[type=number],input[type=password],select,textarea{width:100%;padding:9px 12px;border:1.5px solid var(--gray-300);border-radius:8px;font-size:14px;font-family:inherit;transition:border .2s;background:white}
+input:focus,select:focus{outline:none;border-color:var(--maroon);box-shadow:0 0 0 3px rgba(123,26,42,0.1)}
+.score-input{width:80px!important;text-align:center;font-weight:700;border-color:var(--gold);background:#fffef5}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary{background:var(--maroon);color:white}.btn-primary:hover{background:var(--maroon-dark);transform:translateY(-1px)}
+.btn-gold{background:var(--gold);color:var(--maroon-dark)}.btn-gold:hover{background:var(--gold-light)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-danger{background:#dc2626;color:white}.btn-danger:hover{background:#b91c1c}
+.btn-outline{background:white;color:var(--maroon);border:1.5px solid var(--maroon)}.btn-outline:hover{background:#fdf0f2}
+.btn-secondary{background:var(--gray-200);color:var(--gray-700)}.btn-secondary:hover{background:var(--gray-300)}
+.btn-success{background:#166534;color:white}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.stat-card{background:linear-gradient(135deg,var(--maroon),var(--maroon-light));color:white;border-radius:var(--radius);padding:14px;text-align:center}
+.stat-num{font-size:30px;font-weight:800;color:var(--gold-light);line-height:1}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;opacity:0.9}
+.stat-icon{font-size:18px;color:rgba(255,255,255,0.5);margin-bottom:4px}
+
+/* BAR CHART */
+.chart-wrap{background:white;border-radius:var(--radius);padding:16px;border:1px solid var(--gray-200);overflow-x:auto;margin-bottom:16px}
+.chart-title{font-size:13px;font-weight:700;color:var(--maroon);margin-bottom:16px;text-align:center;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px}
+.chart-container{display:flex;align-items:flex-end;gap:8px;padding:24px 8px 44px;border-bottom:2px solid var(--gray-200);min-height:200px}
+.chart-bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;min-width:50px;max-width:120px;position:relative}
+.chart-val{font-size:11px;font-weight:700;color:var(--maroon);position:absolute;top:-18px;white-space:nowrap}
+.chart-bar{width:75%;border-radius:4px 4px 0 0;transition:height .5s ease;min-height:4px;background:linear-gradient(to top,var(--maroon),var(--maroon-light));cursor:pointer}
+.chart-bar:hover{background:linear-gradient(to top,var(--maroon-dark),var(--gold))}
+.chart-label{position:absolute;bottom:-40px;font-size:9px;color:var(--gray-700);text-align:center;width:100%;word-break:break-word;line-height:1.3}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-gold{background:#fef3c7;color:#92400e}
+.badge-green{background:#dcfce7;color:#166534}
+.badge-gray{background:var(--gray-100);color:var(--gray-500)}
+.badge-red{background:#fee2e2;color:#991b1b}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:white;border-radius:var(--radius-lg);max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-header{background:var(--maroon);color:white;padding:15px 20px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-weight:700;font-size:14px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.modal-close{background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--gray-200);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:11px 18px;border-radius:var(--radius);color:white;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);animation:slideIn .3s ease;max-width:320px;display:flex;align-items:center;gap:8px}
+.toast-success{background:#166534}
+.toast-error{background:#991b1b}
+.toast-info{background:var(--maroon)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* SEARCH */
+.search-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.search-row input,.search-row select{max-width:220px;width:auto;flex:1;min-width:120px}
+
+/* RANK */
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-weight:800;font-size:13px}
+.r1{background:var(--gold);color:var(--maroon-dark)}
+.r2{background:#9ca3af;color:white}
+.r3{background:#cd7f32;color:white}
+.rn{background:var(--gray-100);color:var(--gray-700)}
+.rank-1{background:#fffbeb!important}
+.rank-2{background:#f9fafb!important}
+.rank-3{background:#fff7f0!important}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--maroon-dark),var(--maroon));z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px}
+.login-card{background:white;border-radius:var(--radius-lg);padding:32px;max-width:380px;width:100%;box-shadow:var(--shadow-lg);text-align:center}
+.login-icon{width:72px;height:72px;background:linear-gradient(135deg,var(--maroon),var(--maroon-light));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.login-icon i{font-size:32px;color:var(--gold)}
+.login-title{font-size:20px;font-weight:800;color:var(--maroon);text-transform:uppercase;line-height:1.2;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--gray-500);margin-bottom:24px}
+
+/* FULLSCREEN */
+#fullscreen{position:fixed;inset:0;background:var(--maroon-dark);z-index:1500;overflow-y:auto;display:none}
+.fs-header{background:var(--maroon);padding:20px;text-align:center;border-bottom:3px solid var(--gold)}
+.fs-title{font-size:clamp(15px,3vw,26px);font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:10px}
+.fs-sub{font-size:clamp(11px,2vw,15px);color:white;margin-top:5px}
+.fs-body{padding:20px;color:white}
+.fs-cat-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.fs-cat-tab{padding:9px 20px;border-radius:20px;border:2px solid var(--gold);color:var(--gold);background:transparent;font-size:13px;font-weight:700;cursor:pointer;text-transform:uppercase;transition:all .2s}
+.fs-cat-tab.active{background:var(--gold);color:var(--maroon-dark)}
+.fs-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.fs-stat{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius);padding:14px;text-align:center}
+.fs-stat-num{font-size:36px;font-weight:900;color:var(--gold)}
+.fs-stat-label{font-size:11px;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-top:4px}
+.fs-btn-close{position:fixed;top:16px;right:16px;background:var(--gold);color:var(--maroon-dark);border:none;padding:9px 16px;border-radius:20px;font-weight:700;font-size:13px;cursor:pointer;z-index:1600;display:inline-flex;align-items:center;gap:6px}
+
+/* MISC */
+.empty-state{text-align:center;padding:40px;color:var(--gray-500)}
+.empty-icon{font-size:40px;margin-bottom:10px;color:var(--gray-300)}
+.hint{font-size:12px;color:var(--gray-500);margin-top:4px}
+.loading{text-align:center;padding:48px;color:var(--gray-500);font-size:15px;display:flex;align-items:center;justify-content:center;gap:10px}
+.divider-info{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;padding:10px;background:var(--gray-50);border-radius:8px;font-size:13px}
+.divider-info span{display:flex;align-items:center;gap:5px}
+
+/* SETUP */
+.setup-step{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.step-num{background:var(--maroon);color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-right:6px;flex-shrink:0}
+code{background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:12px;font-family:monospace;color:#92400e;word-break:break-all}
+
+/* INPUT GRID */
+.input-grid{display:grid;grid-template-columns:1fr minmax(0,300px);gap:16px;align-items:start}
+@media(max-width:768px){.input-grid{grid-template-columns:1fr}}
+
+/* CABANG LIST */
+.cabang-item{display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200);margin-bottom:6px}
+.cabang-item:last-child{margin-bottom:0}
+.cabang-nama{flex:1;font-size:13px;font-weight:600}
+
+@media(max-width:600px){
+  main{padding:10px}
+  .header-inner{padding:12px}
+  .logo-box{width:42px;height:42px}
+  .logo-box i{font-size:18px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .search-row input,.search-row select{max-width:100%;min-width:0}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-area">
+        <div class="logo-box"><i class="bi bi-award-fill"></i></div>
+        <div class="logo-box"><i class="bi bi-tree-fill"></i></div>
+      </div>
+      <div class="header-text">
+        <div class="header-title">Dashboard Hasil Lomba LT III Tubaba 2026</div>
+        <div class="header-sub">Kwartir Cabang Gerakan Pramuka Tulang Bawang Barat</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-hdr btn-hdr-gold" id="loginBtn" onclick="showLogin()">
+          <i class="bi bi-shield-lock-fill"></i> Admin
+        </button>
+        <button class="btn-hdr btn-hdr-danger" id="logoutBtn" onclick="doLogout()" style="display:none">
+          <i class="bi bi-box-arrow-right"></i> Keluar
+        </button>
+        <button class="btn-hdr btn-hdr-ghost" onclick="openFullscreen()">
+          <i class="bi bi-fullscreen"></i> Layar Penuh
+        </button>
+      </div>
+    </div>
+    <div class="gold-line"></div>
+  </header>
+
+  <!-- NAV -->
+  <nav>
+    <button class="nav-btn active" onclick="showPage('peserta')" id="nav-peserta">
+      <i class="bi bi-people-fill"></i> Data Peserta
+    </button>
+    <button class="nav-btn" onclick="showPage('nilai')" id="nav-nilai">
+      <i class="bi bi-pencil-square"></i> Input Nilai
+    </button>
+    <button class="nav-btn" onclick="showPage('dashboard')" id="nav-dashboard">
+      <i class="bi bi-bar-chart-fill"></i> Dashboard Hasil
+    </button>
+  </nav>
+
+  <main id="mainContent">
+    <div class="loading">
+      <i class="bi bi-arrow-repeat" style="font-size:24px;animation:spin 1s linear infinite"></i>
+      Menghubungkan ke database...
+    </div>
+  </main>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="display:none">
+  <div class="login-card">
+    <div class="login-icon"><i class="bi bi-shield-lock-fill"></i></div>
+    <div class="login-title">Login Admin</div>
+    <div class="login-sub">LT III Tubaba 2026</div>
+    <div class="form-group" style="text-align:left">
+      <div class="form-label">Username</div>
+      <input type="text" id="loginUser" placeholder="Masukkan username">
+    </div>
+    <div class="form-group" style="text-align:left">
+      <div class="form-label">Password</div>
+      <input type="password" id="loginPass" placeholder="Masukkan password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeLogin()">
+        <i class="bi bi-x-lg"></i> Batal
+      </button>
+      <button class="btn btn-primary" style="flex:1" onclick="doLogin()">
+        <i class="bi bi-box-arrow-in-right"></i> Masuk
+      </button>
+    </div>
+    <div id="loginErr" style="color:#dc2626;font-size:12px;margin-top:8px;display:flex;align-items:center;gap:5px"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Modal</span>
+      <button class="modal-close" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- FULLSCREEN -->
+<div id="fullscreen">
+  <button class="fs-btn-close" onclick="closeFullscreen()">
+    <i class="bi bi-fullscreen-exit"></i> Tutup
+  </button>
+  <div class="fs-header">
+    <div class="fs-title">
+      <i class="bi bi-award-fill"></i>
+      Dashboard Hasil Lomba LT III Tubaba 2026
+      <i class="bi bi-award-fill"></i>
+    </div>
+    <div class="fs-sub">Kwartir Cabang Gerakan Pramuka Tulang Bawang Barat</div>
+  </div>
+  <div class="fs-body" id="fsBody"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<style>
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
+
+<script>
+// ===================== CONFIG =====================
+const SUPABASE_URL = window.SUPABASE_URL || '';
+const SUPABASE_KEY = window.SUPABASE_ANON_KEY || '';
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'lt3tubaba2026';
+const CATEGORIES = ['SD PUTRA','SD PUTRI','SMP PUTRA','SMP PUTRI'];
+
+const INIT_PESERTA = [
+  {id:'SD-P-01',kapling:'Kapling 1',regu:'GAJAH',kwarran:'TUMIJAJAR',kategori:'SD PUTRA'},
+  {id:'SD-P-02',kapling:'Kapling 2',regu:'ELANG',kwarran:'TULANG BAWANG UDIK',kategori:'SD PUTRA'},
+  {id:'SD-P-03',kapling:'Kapling 3',regu:'BANTENG',kwarran:'TULANG BAWANG TENGAH',kategori:'SD PUTRA'},
+  {id:'SD-P-04',kapling:'Kapling 4',regu:'SEMUT',kwarran:'WAY KENANGA',kategori:'SD PUTRA'},
+  {id:'SD-P-05',kapling:'Kapling 5',regu:'ELANG',kwarran:'PAGAR DEWA',kategori:'SD PUTRA'},
+  {id:'SD-P-06',kapling:'Kapling 6',regu:'HARIMAU',kwarran:'GUNUNG AGUNG',kategori:'SD PUTRA'},
+  {id:'SD-P-07',kapling:'Kapling 7',regu:'GARUDA',kwarran:'LAMBU KIBANG',kategori:'SD PUTRA'},
+  {id:'SD-W-01',kapling:'Kapling 1',regu:'RAFLESIA',kwarran:'TUMIJAJAR',kategori:'SD PUTRI'},
+  {id:'SD-W-02',kapling:'Kapling 2',regu:'MAWAR',kwarran:'TULANG BAWANG UDIK',kategori:'SD PUTRI'},
+  {id:'SD-W-03',kapling:'Kapling 3',regu:'ASOKA',kwarran:'TULANG BAWANG TENGAH',kategori:'SD PUTRI'},
+  {id:'SD-W-04',kapling:'Kapling 4',regu:'TERATAI',kwarran:'WAY KENANGA',kategori:'SD PUTRI'},
+  {id:'SD-W-05',kapling:'Kapling 5',regu:'KAMBOJA',kwarran:'PAGAR DEWA',kategori:'SD PUTRI'},
+  {id:'SD-W-06',kapling:'Kapling 6',regu:'MAWAR',kwarran:'GUNUNG AGUNG',kategori:'SD PUTRI'},
+  {id:'SD-W-07',kapling:'Kapling 7',regu:'TULIP',kwarran:'LAMBU KIBANG',kategori:'SD PUTRI'},
+  {id:'SMP-P-01',kapling:'Kapling 8',regu:'SINGA',kwarran:'TUMIJAJAR',kategori:'SMP PUTRA'},
+  {id:'SMP-P-02',kapling:'Kapling 9',regu:'SRIGALA',kwarran:'TULANG BAWANG UDIK',kategori:'SMP PUTRA'},
+  {id:'SMP-P-03',kapling:'Kapling 10',regu:'SRIGALA',kwarran:'TULANG BAWANG TENGAH',kategori:'SMP PUTRA'},
+  {id:'SMP-P-04',kapling:'Kapling 11',regu:'GARUDA',kwarran:'WAY KENANGA',kategori:'SMP PUTRA'},
+  {id:'SMP-P-05',kapling:'Kapling 12',regu:'RAJAWALI',kwarran:'GUNUNG AGUNG',kategori:'SMP PUTRA'},
+  {id:'SMP-P-06',kapling:'Kapling 13',regu:'BANTENG',kwarran:'LAMBU KIBANG',kategori:'SMP PUTRA'},
+  {id:'SMP-W-01',kapling:'Kapling 8',regu:'MELATI',kwarran:'TUMIJAJAR',kategori:'SMP PUTRI'},
+  {id:'SMP-W-02',kapling:'Kapling 9',regu:'JASMIN',kwarran:'TULANG BAWANG UDIK',kategori:'SMP PUTRI'},
+  {id:'SMP-W-03',kapling:'Kapling 10',regu:'SERUNI',kwarran:'TULANG BAWANG TENGAH',kategori:'SMP PUTRI'},
+  {id:'SMP-W-04',kapling:'Kapling 11',regu:'FLAMBOYAN',kwarran:'WAY KENANGA',kategori:'SMP PUTRI'},
+  {id:'SMP-W-05',kapling:'Kapling 12',regu:'RAFLESIA',kwarran:'GUNUNG AGUNG',kategori:'SMP PUTRI'},
+  {id:'SMP-W-06',kapling:'Kapling 13',regu:'LOTUS',kwarran:'LAMBU KIBANG',kategori:'SMP PUTRI'},
+];
+
+// ===================== STATE =====================
+let sb = null;
+let isAdmin = false;
+let currentPage = 'peserta';
+let currentCat = 'SD PUTRA';
+let appData = { peserta:[], cabang:[], nilai:[] };
+
+// ===================== INIT =====================
+async function init() {
+  const savedUrl = localStorage.getItem('sb_url');
+  const savedKey = localStorage.getItem('sb_key');
+  const url = (SUPABASE_URL && !SUPABASE_URL.includes('YOUR_')) ? SUPABASE_URL : savedUrl;
+  const key = (SUPABASE_KEY && !SUPABASE_KEY.includes('YOUR_')) ? SUPABASE_KEY : savedKey;
+
+  if (!url || !key) { showSetupScreen(); return; }
+  try {
+    sb = supabase.createClient(url, key);
+    await loadAll();
+    renderPage();
+  } catch(e) {
+    showToast('Gagal terhubung: ' + e.message, 'error');
+    showSetupScreen();
+  }
+}
+
+function showSetupScreen() {
+  document.getElementById('mainContent').innerHTML = `
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="bi bi-gear-fill"></i> Setup Koneksi Database</span>
+    </div>
+    <div class="card-body" style="max-width:640px;margin:0 auto">
+      <p style="font-size:14px;color:var(--gray-700);margin-bottom:16px">
+        Aplikasi ini menggunakan <strong>Supabase</strong> sebagai database agar data dapat diakses dari perangkat mana saja secara real-time.
+      </p>
+
+      <div class="setup-step">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
+          <span class="step-num">1</span> Daftar / Login Supabase
+        </div>
+        <p style="font-size:13px">Buka <a href="https://supabase.com" target="_blank" style="color:var(--maroon);font-weight:600">supabase.com</a> lalu login menggunakan akun GitHub.</p>
+      </div>
+
+      <div class="setup-step">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
+          <span class="step-num">2</span> Buat Project Baru
+        </div>
+        <p style="font-size:13px">Klik <strong>New Project</strong>, beri nama <code>lt3-tubaba</code>, pilih region terdekat, lalu klik <strong>Create new project</strong>.</p>
+      </div>
+
+      <div class="setup-step">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
+          <span class="step-num">3</span> Jalankan SQL di SQL Editor
+        </div>
+        <p style="font-size:13px;margin-bottom:8px">Buka <strong>SQL Editor</strong> di Supabase, klik <strong>New Query</strong>, paste SQL berikut, lalu klik <strong>Run</strong>:</p>
+        <textarea readonly style="font-family:monospace;font-size:11px;height:220px;background:#1e1e2e;color:#a6e3a1;border-radius:8px;padding:12px;border:none;width:100%;resize:vertical">create table if not exists peserta (
+  id text primary key,
+  kapling text, regu text, kwarran text, kategori text,
+  created_at timestamptz default now()
+);
+create table if not exists cabang (
+  id text primary key,
+  nama text, aktif boolean default true,
+  created_at timestamptz default now()
+);
+create table if not exists nilai (
+  id text primary key,
+  peserta_id text references peserta(id) on delete cascade,
+  cabang_id text references cabang(id) on delete cascade,
+  nilai numeric, kategori text,
+  updated_at timestamptz default now()
+);
+alter table peserta enable row level security;
+alter table cabang enable row level security;
+alter table nilai enable row level security;
+create policy "public_all" on peserta for all using (true) with check (true);
+create policy "public_all" on cabang for all using (true) with check (true);
+create policy "public_all" on nilai for all using (true) with check (true);</textarea>
+      </div>
+
+      <div class="setup-step">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
+          <span class="step-num">4</span> Ambil URL dan API Key
+        </div>
+        <p style="font-size:13px">Di Supabase, buka <strong>Project Settings</strong> &rarr; <strong>API</strong>, lalu salin <strong>Project URL</strong> dan <strong>anon public key</strong>.</p>
+      </div>
+
+      <div class="setup-step" style="border-color:var(--maroon)">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:12px">
+          <span class="step-num">5</span> Hubungkan Aplikasi
+        </div>
+        <div class="form-group">
+          <div class="form-label">Supabase Project URL</div>
+          <input type="text" id="cfgUrl" placeholder="https://xxxxxxxx.supabase.co">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Supabase Anon Key</div>
+          <input type="text" id="cfgKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="saveConfig()">
+          <i class="bi bi-plug-fill"></i> Hubungkan dan Mulai
+        </button>
+        <div id="cfgErr" style="color:#dc2626;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function saveConfig() {
+  const url = document.getElementById('cfgUrl')?.value.trim();
+  const key = document.getElementById('cfgKey')?.value.trim();
+  if (!url || !key) { document.getElementById('cfgErr').textContent = 'URL dan Key wajib diisi.'; return; }
+  if (!url.startsWith('https://')) { document.getElementById('cfgErr').textContent = 'URL harus diawali https://'; return; }
+  document.getElementById('cfgErr').textContent = 'Menghubungkan...';
+  try {
+    sb = supabase.createClient(url, key);
+    const {error} = await sb.from('peserta').select('id').limit(1);
+    if (error) throw error;
+    localStorage.setItem('sb_url', url);
+    localStorage.setItem('sb_key', key);
+    await loadAll();
+    renderPage();
+    showToast('Berhasil terhubung ke Supabase!', 'success');
+  } catch(e) {
+    document.getElementById('cfgErr').textContent = 'Gagal: ' + (e.message || 'Periksa URL dan Key.');
+  }
+}
+
+// ===================== LOAD DATA =====================
+async function loadAll() {
+  const [pr, cr, nr] = await Promise.all([
+    sb.from('peserta').select('*').order('id'),
+    sb.from('cabang').select('*').order('created_at'),
+    sb.from('nilai').select('*'),
+  ]);
+  appData.peserta = pr.data || [];
+  appData.cabang = cr.data || [];
+  appData.nilai = (nr.data || []).map(n => ({...n, pesertaId: n.peserta_id, cabangId: n.cabang_id}));
+  if (!appData.peserta.length) await seedPeserta();
+}
+
+async function seedPeserta() {
+  const {error} = await sb.from('peserta').insert(INIT_PESERTA);
+  if (!error) appData.peserta = [...INIT_PESERTA];
+}
+
+// ===================== AUTH =====================
+function showLogin() { document.getElementById('loginScreen').style.display = 'flex'; }
+function closeLogin() { document.getElementById('loginScreen').style.display = 'none'; }
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    isAdmin = true; closeLogin();
+    document.getElementById('loginBtn').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = '';
+    showToast('Login berhasil. Selamat datang, Admin.', 'success');
+    renderPage();
+  } else {
+    document.getElementById('loginErr').innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> Username atau password salah.';
+  }
+}
+function doLogout() {
+  isAdmin = false;
+  document.getElementById('loginBtn').style.display = '';
+  document.getElementById('logoutBtn').style.display = 'none';
+  showToast('Anda telah keluar.', 'info');
+  renderPage();
+}
+
+// ===================== NAV =====================
+function showPage(p) {
+  currentPage = p;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + p)?.classList.add('active');
+  renderPage();
+}
+function renderPage() {
+  const main = document.getElementById('mainContent');
+  if (currentPage === 'peserta') {
+    main.innerHTML = renderPeserta();
+    renderPesertaTable(appData.peserta.filter(p => p.kategori === currentCat));
+  } else if (currentPage === 'nilai') {
+    main.innerHTML = renderNilai();
+    initNilaiPage();
+  } else {
+    main.innerHTML = renderDashboard();
+    initDashboard();
+  }
+}
+
+// ===================== PESERTA =====================
+function renderPeserta() {
+  return `<div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="bi bi-people-fill"></i> Data Peserta</span>
+      ${isAdmin ? `<button class="btn btn-gold btn-sm" onclick="modalTambahPeserta()"><i class="bi bi-plus-lg"></i> Tambah</button>` : ''}
+    </div>
+    <div class="card-body">
+      <div class="cat-tabs">${CATEGORIES.map(c => `<button class="cat-tab ${c === currentCat ? 'active' : ''}" onclick="switchCat('${c}')">${c}</button>`).join('')}</div>
+      <div class="search-row">
+        <input type="text" id="searchRegu" placeholder="Cari nama regu..." oninput="filterPeserta()">
+        <select id="filterKwarran" onchange="filterPeserta()">
+          <option value="">Semua Kwarran</option>
+          ${[...new Set(appData.peserta.map(p => p.kwarran))].sort().map(k => `<option value="${k}">${k}</option>`).join('')}
+        </select>
+      </div>
+      <div id="pesertaTable"></div>
+    </div>
+  </div>`;
+}
+function switchCat(c) { currentCat = c; renderPage(); }
+function filterPeserta() {
+  const q = document.getElementById('searchRegu')?.value.toLowerCase() || '';
+  const kw = document.getElementById('filterKwarran')?.value || '';
+  const list = appData.peserta.filter(p => p.kategori === currentCat && p.regu.toLowerCase().includes(q) && (!kw || p.kwarran === kw));
+  renderPesertaTable(list);
+}
+function renderPesertaTable(list) {
+  const wrap = document.getElementById('pesertaTable'); if (!wrap) return;
+  if (!list.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="bi bi-search"></i></div>Tidak ada peserta ditemukan.</div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>No</th><th>ID</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th>${isAdmin ? '<th>Aksi</th>' : ''}</tr></thead>
+    <tbody>${list.map((p, i) => `<tr>
+      <td>${i + 1}</td>
+      <td><span class="badge badge-gold">${p.id}</span></td>
+      <td>${p.kapling}</td>
+      <td><strong>${p.regu}</strong></td>
+      <td>${p.kwarran}</td>
+      ${isAdmin ? `<td style="white-space:nowrap">
+        <button class="btn btn-sm btn-outline" onclick="modalEditPeserta('${p.id}')"><i class="bi bi-pencil-fill"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="confirmHapusPeserta('${p.id}')"><i class="bi bi-trash-fill"></i></button>
+      </td>` : ''}
+    </tr>`).join('')}</tbody></table></div>`;
+}
+function modalTambahPeserta() {
+  openModal('<i class="bi bi-person-plus-fill"></i> Tambah Peserta', `
+    <div class="form-group"><div class="form-label">Kategori</div><select id="mKat">${CATEGORIES.map(c => `<option>${c}</option>`).join('')}</select></div>
+    <div class="form-group"><div class="form-label">ID Peserta</div><input type="text" id="mId" placeholder="Contoh: SD-P-08"></div>
+    <div class="form-group"><div class="form-label">Kapling</div><input type="text" id="mKapling" placeholder="Kapling 8"></div>
+    <div class="form-group"><div class="form-label">Nama Regu</div><input type="text" id="mRegu" placeholder="Nama regu"></div>
+    <div class="form-group"><div class="form-label">Kwarran</div><input type="text" id="mKwarran" placeholder="Nama kwarran"></div>
+  `, [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-check-lg"></i> Simpan',cls:'btn-primary',fn:'savePeserta()'}]);
+}
+async function savePeserta() {
+  const id = document.getElementById('mId')?.value.trim();
+  const kat = document.getElementById('mKat')?.value;
+  const kap = document.getElementById('mKapling')?.value.trim();
+  const reg = document.getElementById('mRegu')?.value.trim().toUpperCase();
+  const kw = document.getElementById('mKwarran')?.value.trim().toUpperCase();
+  if (!id || !kap || !reg || !kw) { showToast('Semua field wajib diisi.', 'error'); return; }
+  if (appData.peserta.find(p => p.id === id)) { showToast('ID sudah ada.', 'error'); return; }
+  const data = {id, kapling:kap, regu:reg, kwarran:kw, kategori:kat};
+  const {error} = await sb.from('peserta').insert(data);
+  if (error) { showToast('Gagal simpan: ' + error.message, 'error'); return; }
+  appData.peserta.push(data);
+  closeModal(); showToast('Peserta berhasil ditambahkan.', 'success'); renderPage();
+}
+function modalEditPeserta(id) {
+  const p = appData.peserta.find(x => x.id === id); if (!p) return;
+  openModal('<i class="bi bi-pencil-square"></i> Edit Peserta', `
+    <div class="form-group"><div class="form-label">ID</div><input type="text" value="${p.id}" disabled style="background:#f4f4f5;color:var(--gray-500)"></div>
+    <div class="form-group"><div class="form-label">Kategori</div><select id="mKat">${CATEGORIES.map(c => `<option ${c === p.kategori ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+    <div class="form-group"><div class="form-label">Kapling</div><input type="text" id="mKapling" value="${p.kapling}"></div>
+    <div class="form-group"><div class="form-label">Nama Regu</div><input type="text" id="mRegu" value="${p.regu}"></div>
+    <div class="form-group"><div class="form-label">Kwarran</div><input type="text" id="mKwarran" value="${p.kwarran}"></div>
+  `, [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-check-lg"></i> Simpan',cls:'btn-primary',fn:`updatePeserta('${id}')`}]);
+}
+async function updatePeserta(id) {
+  const p = appData.peserta.find(x => x.id === id); if (!p) return;
+  const up = {kategori:document.getElementById('mKat')?.value, kapling:document.getElementById('mKapling')?.value.trim(), regu:document.getElementById('mRegu')?.value.trim().toUpperCase(), kwarran:document.getElementById('mKwarran')?.value.trim().toUpperCase()};
+  const {error} = await sb.from('peserta').update(up).eq('id', id);
+  if (error) { showToast('Gagal: ' + error.message, 'error'); return; }
+  Object.assign(p, up);
+  closeModal(); showToast('Peserta berhasil diperbarui.', 'success'); renderPage();
+}
+function confirmHapusPeserta(id) {
+  const p = appData.peserta.find(x => x.id === id); if (!p) return;
+  openModal('<i class="bi bi-trash-fill"></i> Konfirmasi Hapus',
+    `<p>Hapus peserta <strong>${p.regu}</strong> (${p.id})?</p><p class="hint" style="margin-top:6px"><i class="bi bi-info-circle"></i> Semua nilai peserta ini akan ikut terhapus.</p>`,
+    [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-trash-fill"></i> Hapus',cls:'btn-danger',fn:`hapusPeserta('${id}')`}]);
+}
+async function hapusPeserta(id) {
+  await sb.from('nilai').delete().eq('peserta_id', id);
+  await sb.from('peserta').delete().eq('id', id);
+  appData.peserta = appData.peserta.filter(p => p.id !== id);
+  appData.nilai = appData.nilai.filter(n => n.pesertaId !== id);
+  closeModal(); showToast('Peserta berhasil dihapus.', 'success'); renderPage();
+}
+
+// ===================== NILAI =====================
+function renderNilai() {
+  if (!isAdmin) return `<div class="card"><div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon"><i class="bi bi-shield-lock-fill"></i></div>
+      <strong>Akses Terbatas</strong>
+      <p style="margin-top:8px;color:var(--gray-500)">Login sebagai admin untuk mengakses fitur input nilai.</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="showLogin()"><i class="bi bi-box-arrow-in-right"></i> Login Admin</button>
+    </div>
+  </div></div>`;
+  const cabangAktif = appData.cabang.filter(c => c.aktif !== false);
+  return `<div class="input-grid">
+    <div class="card">
+      <div class="card-header"><span class="card-title"><i class="bi bi-pencil-square"></i> Input Nilai</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div class="form-group" style="margin:0">
+            <div class="form-label"><i class="bi bi-grid-fill"></i> Langkah 1: Kategori</div>
+            <select id="catSelect">${CATEGORIES.map(c => `<option value="${c}" ${c === currentCat ? 'selected' : ''}>${c}</option>`).join('')}</select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <div class="form-label"><i class="bi bi-trophy-fill"></i> Langkah 2: Cabang Lomba</div>
+            <select id="cabangSelect">
+              <option value="">-- Pilih Cabang --</option>
+              ${cabangAktif.map(c => `<option value="${c.id}">${c.nama}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div id="nilaiTable"><div class="empty-state"><div class="empty-icon"><i class="bi bi-hand-index-thumb-fill"></i></div>Pilih kategori dan cabang lomba untuk mulai input nilai.</div></div>
+        <div id="nilaiActions" style="display:none;margin-top:12px;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="simpanNilai()"><i class="bi bi-floppy-fill"></i> Simpan Semua Nilai</button>
+          <button class="btn btn-secondary" onclick="kosongkanInput()"><i class="bi bi-eraser-fill"></i> Kosongkan</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title"><i class="bi bi-gear-fill"></i> Kelola Cabang Lomba</span></div>
+      <div class="card-body">
+        <button class="btn btn-primary btn-sm" style="width:100%;margin-bottom:12px" onclick="modalTambahCabang()">
+          <i class="bi bi-plus-lg"></i> Tambah Cabang Lomba
+        </button>
+        ${appData.cabang.length ? appData.cabang.map(c => `
+        <div class="cabang-item">
+          <span class="cabang-nama">${c.nama}</span>
+          <span class="badge ${c.aktif !== false ? 'badge-green' : 'badge-gray'}">${c.aktif !== false ? 'Aktif' : 'Nonaktif'}</span>
+          <button class="btn btn-sm btn-outline" onclick="toggleCabang('${c.id}')" title="Toggle status"><i class="bi bi-arrow-left-right"></i></button>
+          <button class="btn btn-sm btn-outline" onclick="modalEditCabang('${c.id}')"><i class="bi bi-pencil-fill"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="confirmHapusCabang('${c.id}')"><i class="bi bi-trash-fill"></i></button>
+        </div>`).join('') : `<div class="empty-state" style="padding:20px"><div class="empty-icon"><i class="bi bi-clipboard-x"></i></div>Belum ada cabang lomba.</div>`}
+      </div>
+    </div>
+  </div>`;
+}
+function initNilaiPage() {
+  document.getElementById('catSelect')?.addEventListener('change', e => { currentCat = e.target.value; onCabangChange(); });
+  document.getElementById('cabangSelect')?.addEventListener('change', onCabangChange);
+}
+function onCabangChange() {
+  const cabId = document.getElementById('cabangSelect')?.value;
+  const cat = document.getElementById('catSelect')?.value || currentCat;
+  const wrap = document.getElementById('nilaiTable');
+  const acts = document.getElementById('nilaiActions');
+  if (!wrap) return;
+  if (!cabId) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="bi bi-hand-index-thumb-fill"></i></div>Pilih cabang lomba.</div>`;
+    if (acts) acts.style.display = 'none'; return;
+  }
+  const peserta = appData.peserta.filter(p => p.kategori === cat);
+  if (!peserta.length) { wrap.innerHTML = '<div class="empty-state">Tidak ada peserta di kategori ini.</div>'; return; }
+  if (acts) acts.style.display = 'flex';
+  wrap.innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>No</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th><th>Nilai (0-100)</th></tr></thead>
+    <tbody>${peserta.map((p, i) => {
+      const ex = appData.nilai.find(n => n.pesertaId === p.id && n.cabangId === cabId);
+      return `<tr><td>${i+1}</td><td>${p.kapling}</td><td><strong>${p.regu}</strong></td><td>${p.kwarran}</td>
+        <td><input type="number" class="score-input" id="score_${p.id}" min="0" max="100" step="0.01" value="${ex ? ex.nilai : ''}" placeholder="—"></td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+async function simpanNilai() {
+  const cabId = document.getElementById('cabangSelect')?.value;
+  const cat = document.getElementById('catSelect')?.value || currentCat;
+  if (!cabId) { showToast('Pilih cabang lomba terlebih dahulu.', 'error'); return; }
+  const peserta = appData.peserta.filter(p => p.kategori === cat);
+  const upserts = []; let skipped = 0;
+  for (const p of peserta) {
+    const inp = document.getElementById('score_' + p.id);
+    if (!inp || inp.value === '') { skipped++; continue; }
+    const val = parseFloat(inp.value);
+    if (isNaN(val) || val < 0 || val > 100) { showToast(`Nilai ${p.regu} harus antara 0-100.`, 'error'); return; }
+    upserts.push({id: p.id+'_'+cabId, peserta_id:p.id, cabang_id:cabId, nilai:val, kategori:cat, updated_at:new Date().toISOString()});
+  }
+  if (!upserts.length) { showToast('Tidak ada nilai yang diisi.', 'info'); return; }
+  const {error} = await sb.from('nilai').upsert(upserts, {onConflict:'id'});
+  if (error) { showToast('Gagal menyimpan: ' + error.message, 'error'); return; }
+  for (const u of upserts) {
+    const mapped = {...u, pesertaId:u.peserta_id, cabangId:u.cabang_id};
+    const idx = appData.nilai.findIndex(n => n.id === u.id);
+    if (idx >= 0) appData.nilai[idx] = mapped; else appData.nilai.push(mapped);
+  }
+  showToast(`${upserts.length} nilai berhasil disimpan.`, 'success');
+}
+function kosongkanInput() { document.querySelectorAll('.score-input').forEach(i => i.value = ''); }
+
+// ===================== CABANG =====================
+function modalTambahCabang() {
+  openModal('<i class="bi bi-plus-circle-fill"></i> Tambah Cabang Lomba',
+    `<div class="form-group"><div class="form-label">Nama Cabang Lomba</div><input type="text" id="mCabangNama" placeholder="Contoh: Pionering, PPGD, Semaphore..."></div>`,
+    [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-check-lg"></i> Simpan',cls:'btn-primary',fn:'saveCabang()'}]);
+}
+async function saveCabang() {
+  const nama = document.getElementById('mCabangNama')?.value.trim();
+  if (!nama) { showToast('Nama cabang tidak boleh kosong.', 'error'); return; }
+  const id = 'cab_' + Date.now();
+  const data = {id, nama, aktif:true, created_at:new Date().toISOString()};
+  const {error} = await sb.from('cabang').insert(data);
+  if (error) { showToast('Gagal: ' + error.message, 'error'); return; }
+  appData.cabang.push(data);
+  closeModal(); showToast('Cabang lomba ditambahkan.', 'success'); renderPage();
+}
+function modalEditCabang(id) {
+  const c = appData.cabang.find(x => x.id === id); if (!c) return;
+  openModal('<i class="bi bi-pencil-square"></i> Edit Cabang Lomba',
+    `<div class="form-group"><div class="form-label">Nama Cabang Lomba</div><input type="text" id="mCabangNama" value="${c.nama}"></div>`,
+    [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-check-lg"></i> Simpan',cls:'btn-primary',fn:`updateCabang('${id}')`}]);
+}
+async function updateCabang(id) {
+  const nama = document.getElementById('mCabangNama')?.value.trim();
+  if (!nama) { showToast('Nama tidak boleh kosong.', 'error'); return; }
+  const {error} = await sb.from('cabang').update({nama}).eq('id', id);
+  if (error) { showToast('Gagal: ' + error.message, 'error'); return; }
+  appData.cabang.find(x => x.id === id).nama = nama;
+  closeModal(); showToast('Cabang diperbarui.', 'success'); renderPage();
+}
+async function toggleCabang(id) {
+  const c = appData.cabang.find(x => x.id === id); if (!c) return;
+  const aktif = c.aktif === false ? true : false;
+  await sb.from('cabang').update({aktif}).eq('id', id);
+  c.aktif = aktif; renderPage();
+}
+function confirmHapusCabang(id) {
+  const c = appData.cabang.find(x => x.id === id); if (!c) return;
+  if (appData.nilai.some(n => n.cabangId === id)) { showToast('Cabang ini sudah memiliki data nilai dan tidak dapat dihapus.', 'error'); return; }
+  openModal('<i class="bi bi-trash-fill"></i> Konfirmasi Hapus',
+    `<p>Hapus cabang lomba <strong>${c.nama}</strong>?</p>`,
+    [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-trash-fill"></i> Hapus',cls:'btn-danger',fn:`hapusCabang('${id}')`}]);
+}
+async function hapusCabang(id) {
+  await sb.from('cabang').delete().eq('id', id);
+  appData.cabang = appData.cabang.filter(c => c.id !== id);
+  closeModal(); showToast('Cabang dihapus.', 'success'); renderPage();
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  return `<div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-bar-chart-fill"></i> Dashboard Hasil</span></div>
+    <div class="card-body">
+      <div class="cat-tabs">${CATEGORIES.map(c => `<button class="cat-tab ${c === currentCat ? 'active' : ''}" onclick="switchCatDash('${c}')">${c}</button>`).join('')}</div>
+      <div id="dashContent"></div>
+    </div>
+  </div>`;
+}
+function switchCatDash(c) {
+  currentCat = c;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.toggle('active', t.textContent.trim() === c));
+  renderDashContent(c);
+}
+function initDashboard() { renderDashContent(currentCat); }
+function renderDashContent(cat) {
+  const wrap = document.getElementById('dashContent'); if (!wrap) return;
+  const peserta = appData.peserta.filter(p => p.kategori === cat);
+  const cabang = appData.cabang.filter(c => c.aktif !== false);
+  const nilaiCat = appData.nilai.filter(n => n.kategori === cat);
+  const totalNilai = nilaiCat.length;
+  const pesertaDinilai = new Set(nilaiCat.map(n => n.pesertaId)).size;
+  const belumDinilai = peserta.length - pesertaDinilai;
+
+  const chartData = cabang.map(c => {
+    const vals = nilaiCat.filter(n => n.cabangId === c.id);
+    const avg = vals.length ? (vals.reduce((s, v) => s + v.nilai, 0) / vals.length).toFixed(1) : null;
+    return {nama:c.nama, avg, count:vals.length};
+  }).filter(d => d.avg !== null);
+  const maxAvg = chartData.length ? Math.max(...chartData.map(d => parseFloat(d.avg))) : 100;
+
+  const rekap = peserta.map(p => {
+    const pNilai = nilaiCat.filter(n => n.pesertaId === p.id);
+    const cabangNilai = {};
+    pNilai.forEach(n => cabangNilai[n.cabangId] = n.nilai);
+    return {...p, total:pNilai.reduce((s, n) => s + n.nilai, 0), cabangNilai, jumlahNilai:pNilai.length};
+  }).sort((a, b) => b.total - a.total);
+
+  let rank = 1;
+  for (let i = 0; i < rekap.length; i++) {
+    if (i > 0 && rekap[i].total === rekap[i-1].total) rekap[i].rank = rekap[i-1].rank;
+    else rekap[i].rank = rank;
+    rank++;
+  }
+  const isFinal = cabang.length > 0 && peserta.length > 0 && rekap.every(r => r.jumlahNilai === cabang.length);
+
+  wrap.innerHTML = `
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon"><i class="bi bi-people-fill"></i></div><div class="stat-num">${peserta.length}</div><div class="stat-label">Total Regu</div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="bi bi-trophy-fill"></i></div><div class="stat-num">${cabang.length}</div><div class="stat-label">Cabang Lomba</div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div><div class="stat-num">${totalNilai}</div><div class="stat-label">Nilai Masuk</div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="bi bi-clock-fill"></i></div><div class="stat-num">${belumDinilai}</div><div class="stat-label">Belum Dinilai</div></div>
+  </div>
+
+  ${chartData.length ? `<div class="chart-wrap">
+    <div class="chart-title"><i class="bi bi-bar-chart-fill"></i> Rata-rata Nilai per Cabang Lomba &mdash; ${cat}</div>
+    <div class="chart-container">
+      ${chartData.map(d => {
+        const h = maxAvg > 0 ? (parseFloat(d.avg) / maxAvg) * 180 : 4;
+        return `<div class="chart-bar-wrap" style="position:relative;padding-top:24px">
+          <span class="chart-val">${d.avg}</span>
+          <div class="chart-bar" style="height:${h}px"></div>
+          <span class="chart-label">${d.nama}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>` : `<div class="empty-state" style="margin-bottom:16px"><div class="empty-icon"><i class="bi bi-bar-chart"></i></div>Belum ada data nilai untuk diagram.</div>`}
+
+  <div class="card" style="border:1px solid var(--gray-200)">
+    <div class="card-header"><span class="card-title"><i class="bi bi-list-ol"></i> Rincian Nilai per Cabang</span></div>
+    <div class="card-body">
+      <select id="detailCabangSel" onchange="renderDetailCabang('${cat}',this.value)" style="max-width:280px">
+        <option value="">-- Pilih Cabang Lomba --</option>
+        ${cabang.map(c => `<option value="${c.id}">${c.nama}</option>`).join('')}
+      </select>
+      <div id="detailCabangWrap" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="card" style="border:1px solid var(--gray-200);margin-top:16px">
+    <div class="card-header">
+      <span class="card-title"><i class="bi bi-trophy-fill"></i> Rekapitulasi dan Peringkat &mdash; ${cat}</span>
+      <span class="badge ${isFinal ? 'badge-green' : 'badge-gold'}">
+        <i class="bi bi-${isFinal ? 'check-circle-fill' : 'clock-fill'}"></i> ${isFinal ? 'FINAL' : 'SEMENTARA'}
+      </span>
+    </div>
+    <div class="card-body">
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th>Peringkat</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th>
+          ${cabang.map(c => `<th style="min-width:80px">${c.nama}</th>`).join('')}
+          <th>Total</th>
+        </tr></thead>
+        <tbody>${rekap.map(p => {
+          const rCls = p.rank===1?'rank-1':p.rank===2?'rank-2':p.rank===3?'rank-3':'';
+          const rB = p.rank===1?'r1':p.rank===2?'r2':p.rank===3?'r3':'rn';
+          return `<tr class="${rCls}">
+            <td style="text-align:center"><span class="rank-badge ${rB}">${p.rank}</span></td>
+            <td>${p.kapling}</td><td><strong>${p.regu}</strong></td><td>${p.kwarran}</td>
+            ${cabang.map(c => { const v = p.cabangNilai[c.id]; return `<td style="text-align:center">${v !== undefined ? v : '<span class="badge badge-gray">—</span>'}</td>`; }).join('')}
+            <td style="text-align:center;font-weight:800;color:var(--maroon)">${p.jumlahNilai > 0 ? p.total : '-'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+function renderDetailCabang(cat, cabId) {
+  const wrap = document.getElementById('detailCabangWrap'); if (!wrap || !cabId) { if(wrap) wrap.innerHTML=''; return; }
+  const peserta = appData.peserta.filter(p => p.kategori === cat);
+  const vals = appData.nilai.filter(n => n.cabangId === cabId && n.kategori === cat);
+  const totalNilai = vals.reduce((s, n) => s + n.nilai, 0);
+  const dinilai = vals.length;
+  const avg = dinilai ? (totalNilai / dinilai).toFixed(2) : '—';
+  wrap.innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>No</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th><th>Nilai</th></tr></thead>
+    <tbody>${peserta.map((p, i) => {
+      const v = vals.find(n => n.pesertaId === p.id);
+      return `<tr><td>${i+1}</td><td>${p.kapling}</td><td><strong>${p.regu}</strong></td><td>${p.kwarran}</td>
+        <td style="text-align:center">${v !== undefined ? `<strong>${v.nilai}</strong>` : '<span class="badge badge-gray">BELUM DINILAI</span>'}</td></tr>`;
+    }).join('')}</tbody></table></div>
+  <div class="divider-info">
+    <span><i class="bi bi-calculator"></i> Total: <strong>${totalNilai}</strong></span>
+    <span><i class="bi bi-check-circle-fill" style="color:#166534"></i> Dinilai: <strong>${dinilai}</strong></span>
+    <span><i class="bi bi-clock-fill" style="color:#92400e"></i> Belum: <strong>${peserta.length - dinilai}</strong></span>
+    <span><i class="bi bi-graph-up"></i> Rata-rata: <strong>${avg}</strong></span>
+  </div>`;
+}
+
+// ===================== FULLSCREEN =====================
+function openFullscreen() { document.getElementById('fullscreen').style.display = 'block'; renderFullscreen(); }
+function closeFullscreen() { document.getElementById('fullscreen').style.display = 'none'; }
+function renderFullscreen() {
+  document.getElementById('fsBody').innerHTML = `
+  <div class="fs-cat-tabs">${CATEGORIES.map(c => `<button class="fs-cat-tab ${c === currentCat ? 'active' : ''}" onclick="fsSwitch('${c}')">${c}</button>`).join('')}</div>
+  <div id="fsContent"></div>`;
+  fsRenderCat(currentCat);
+}
+function fsSwitch(c) { document.querySelectorAll('.fs-cat-tab').forEach(t => t.classList.toggle('active', t.textContent === c)); fsRenderCat(c); }
+function fsRenderCat(cat) {
+  const wrap = document.getElementById('fsContent'); if (!wrap) return;
+  const peserta = appData.peserta.filter(p => p.kategori === cat);
+  const cabang = appData.cabang.filter(c => c.aktif !== false);
+  const nilaiCat = appData.nilai.filter(n => n.kategori === cat);
+  const dinilai = new Set(nilaiCat.map(n => n.pesertaId)).size;
+  const rekap = peserta.map(p => {
+    const pN = nilaiCat.filter(n => n.pesertaId === p.id);
+    return {...p, total:pN.reduce((s,n)=>s+n.nilai,0), jumlahNilai:pN.length};
+  }).sort((a,b) => b.total - a.total);
+  let rank = 1;
+  for (let i = 0; i < rekap.length; i++) {
+    if (i > 0 && rekap[i].total === rekap[i-1].total) rekap[i].rank = rekap[i-1].rank;
+    else rekap[i].rank = rank;
+    rank++;
+  }
+  wrap.innerHTML = `
+  <div class="fs-stats">
+    <div class="fs-stat"><div class="fs-stat-num">${peserta.length}</div><div class="fs-stat-label">Total Regu</div></div>
+    <div class="fs-stat"><div class="fs-stat-num">${cabang.length}</div><div class="fs-stat-label">Cabang Lomba</div></div>
+    <div class="fs-stat"><div class="fs-stat-num">${dinilai}</div><div class="fs-stat-label">Sudah Dinilai</div></div>
+  </div>
+  <div class="tbl-wrap"><table style="font-size:15px">
+    <thead><tr><th>Peringkat</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th><th>Total Nilai</th></tr></thead>
+    <tbody>${rekap.map(p => `<tr>
+      <td style="text-align:center;font-size:20px;font-weight:900;color:var(--gold)">${p.rank}</td>
+      <td style="color:white">${p.kapling}</td>
+      <td style="color:white;font-weight:700;font-size:16px">${p.regu}</td>
+      <td style="color:rgba(255,255,255,0.8)">${p.kwarran}</td>
+      <td style="text-align:center;font-size:24px;font-weight:900;color:var(--gold)">${p.jumlahNilai > 0 ? p.total : '-'}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ===================== MODAL =====================
+function openModal(title, body, btns) {
+  document.getElementById('modalTitle').innerHTML = title;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modalFooter').innerHTML = btns.map(b => `<button class="btn ${b.cls}" onclick="${b.fn}">${b.label}</button>`).join('');
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+
+// ===================== TOAST =====================
+function showToast(msg, type = 'info') {
+  const icons = {success:'check-circle-fill', error:'x-circle-fill', info:'info-circle-fill'};
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<i class="bi bi-${icons[type]||'info-circle-fill'}"></i> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ===================== BOOT =====================
+window.addEventListener('load', () => {
+  const savedUrl = localStorage.getItem('sb_url');
+  const savedKey = localStorage.getItem('sb_key');
+  if (savedUrl) window.SUPABASE_URL = savedUrl;
+  if (savedKey) window.SUPABASE_ANON_KEY = savedKey;
+  init();
+});
+</script>
+</body>
+</html>
