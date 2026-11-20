@@ -359,6 +359,8 @@ let appData = { peserta:[], cabang:[], nilai:[] };
 
 // ===================== INIT =====================
 async function init() {
+  const SUPABASE_URL = 'https://xybnmywwxeestxfupvfe.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_QVU_b9ZAFHjzf72XuhXaGQ_OKLfyH1h';
   const savedUrl = localStorage.getItem('sb_url');
   const savedKey = localStorage.getItem('sb_key');
   const url = (SUPABASE_URL && !SUPABASE_URL.includes('YOUR_')) ? SUPABASE_URL : savedUrl;
