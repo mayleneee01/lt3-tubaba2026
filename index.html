@@ -89,7 +89,6 @@ input:focus,select:focus{outline:none;border-color:var(--maroon);box-shadow:0 0 
 .btn-danger{background:#dc2626;color:white}.btn-danger:hover{background:#b91c1c}
 .btn-outline{background:white;color:var(--maroon);border:1.5px solid var(--maroon)}.btn-outline:hover{background:#fdf0f2}
 .btn-secondary{background:var(--gray-200);color:var(--gray-700)}.btn-secondary:hover{background:var(--gray-300)}
-.btn-success{background:#166534;color:white}
 
 /* STATS */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
@@ -113,7 +112,6 @@ input:focus,select:focus{outline:none;border-color:var(--maroon);box-shadow:0 0 
 .badge-gold{background:#fef3c7;color:#92400e}
 .badge-green{background:#dcfce7;color:#166534}
 .badge-gray{background:var(--gray-100);color:var(--gray-500)}
-.badge-red{background:#fee2e2;color:#991b1b}
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
@@ -133,6 +131,7 @@ input:focus,select:focus{outline:none;border-color:var(--maroon);box-shadow:0 0 
 .toast-error{background:#991b1b}
 .toast-info{background:var(--maroon)}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* SEARCH */
 .search-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -170,6 +169,9 @@ input:focus,select:focus{outline:none;border-color:var(--maroon);box-shadow:0 0 
 .fs-stat-num{font-size:36px;font-weight:900;color:var(--gold)}
 .fs-stat-label{font-size:11px;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-top:4px}
 .fs-btn-close{position:fixed;top:16px;right:16px;background:var(--gold);color:var(--maroon-dark);border:none;padding:9px 16px;border-radius:20px;font-weight:700;font-size:13px;cursor:pointer;z-index:1600;display:inline-flex;align-items:center;gap:6px}
+#fullscreen .tbl-wrap{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.2)}
+#fullscreen tbody tr:nth-child(even){background:rgba(255,255,255,0.05)}
+#fullscreen tbody tr:hover{background:rgba(255,255,255,0.1)}
 
 /* MISC */
 .empty-state{text-align:center;padding:40px;color:var(--gray-500)}
@@ -178,11 +180,6 @@ input:focus,select:focus{outline:none;border-color:var(--maroon);box-shadow:0 0 
 .loading{text-align:center;padding:48px;color:var(--gray-500);font-size:15px;display:flex;align-items:center;justify-content:center;gap:10px}
 .divider-info{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;padding:10px;background:var(--gray-50);border-radius:8px;font-size:13px}
 .divider-info span{display:flex;align-items:center;gap:5px}
-
-/* SETUP */
-.setup-step{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:14px;margin-bottom:12px}
-.step-num{background:var(--maroon);color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-right:6px;flex-shrink:0}
-code{background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:12px;font-family:monospace;color:#92400e;word-break:break-all}
 
 /* INPUT GRID */
 .input-grid{display:grid;grid-template-columns:1fr minmax(0,300px);gap:16px;align-items:start}
@@ -200,6 +197,8 @@ code{background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:12px;font-fa
   .logo-box i{font-size:18px}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .search-row input,.search-row select{max-width:100%;min-width:0}
+  .toast-container{left:12px;right:12px;bottom:12px}
+  .toast{max-width:none}
 }
 </style>
 </head>
@@ -309,14 +308,12 @@ code{background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:12px;font-fa
 <!-- TOAST -->
 <div class="toast-container" id="toastContainer"></div>
 
-<style>
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-</style>
-
 <script>
 // ===================== CONFIG =====================
-const SUPABASE_URL = window.SUPABASE_URL || '';
-const SUPABASE_KEY = window.SUPABASE_ANON_KEY || '';
+// Kunci publishable Supabase memang aman ada di frontend.
+// Jika berbeda dengan yang sudah kamu commit, pakai nilai milikmu.
+const SUPABASE_URL = 'https://xybnmywwxeestxfupvfe.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_QVU_b9ZAFHjzf72XuhXaGQ_OKLfyH1h';
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'lt3tubaba2026';
 const CATEGORIES = ['SD PUTRA','SD PUTRI','SMP PUTRA','SMP PUTRI'];
@@ -357,127 +354,80 @@ let currentPage = 'peserta';
 let currentCat = 'SD PUTRA';
 let appData = { peserta:[], cabang:[], nilai:[] };
 
+// ===================== HELPERS =====================
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Tangkap semua error async supaya tidak diam saja
+window.addEventListener('unhandledrejection', e => {
+  console.error(e.reason);
+  showToast('Error: ' + esc(e.reason?.message || e.reason), 'error');
+});
+
+// ===================== EXCEL-LIKE MATH =====================
+// ROUND(x,d): setengah dibulatkan menjauhi nol, seperti Excel
+function xRound(x, d = 2) {
+  x = Number(x);
+  if (!isFinite(x)) return 0;
+  const f = Math.pow(10, d), s = x < 0 ? -1 : 1;
+  return s * Math.round(Math.abs(x) * f + 1e-9) / f;
+}
+// SUM tanpa noise floating point
+function xSum(arr) { return xRound(arr.reduce((s, v) => s + Number(v), 0), 10); }
+function fmt2(x) { return xRound(x, 2).toFixed(2); }
+
+// Rekap per kategori: total = SUM, peringkat = RANK.EQ, urutan baris = nomor kapling
+function buildRekap(cat) {
+  const cabang = appData.cabang.filter(c => c.aktif !== false);
+  const aktif = new Set(cabang.map(c => c.id));
+  const peserta = appData.peserta.filter(p => p.kategori === cat);
+  const ids = new Set(peserta.map(p => p.id));
+  const nilaiCat = appData.nilai.filter(n => ids.has(n.pesertaId) && aktif.has(n.cabangId));
+
+  const rows = peserta.map(p => {
+    const pn = nilaiCat.filter(n => n.pesertaId === p.id);
+    const cabangNilai = {};
+    pn.forEach(n => cabangNilai[n.cabangId] = n.nilai);
+    return {...p, cabangNilai, jumlahNilai: pn.length, total: xRound(xSum(pn.map(n => n.nilai)), 2)};
+  });
+
+  // RANK.EQ: 1 + jumlah regu dengan total lebih besar (nilai sama = peringkat sama)
+  const rated = rows.filter(r => r.jumlahNilai > 0);
+  rows.forEach(r => r.rank = r.jumlahNilai > 0 ? 1 + rated.filter(o => o.total > r.total).length : null);
+
+  // Urut berdasarkan nomor kapling (angka, bukan teks)
+  const kapNo = r => parseInt(String(r.kapling).replace(/\D/g, ''), 10) || 0;
+  rows.sort((a, b) => kapNo(a) - kapNo(b) || a.id.localeCompare(b.id));
+
+  return {peserta, cabang, nilaiCat, rekap: rows};
+}
+
 // ===================== INIT =====================
 async function init() {
-  const SUPABASE_URL = 'https://xybnmywwxeestxfupvfe.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_QVU_b9ZAFHjzf72XuhXaGQ_OKLfyH1h';
-  const savedUrl = localStorage.getItem('sb_url');
-  const savedKey = localStorage.getItem('sb_key');
-  const url = (SUPABASE_URL && !SUPABASE_URL.includes('YOUR_')) ? SUPABASE_URL : savedUrl;
-  const key = (SUPABASE_KEY && !SUPABASE_KEY.includes('YOUR_')) ? SUPABASE_KEY : savedKey;
-
-  if (!url || !key) { showSetupScreen(); return; }
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    showNotReady('URL dan key Supabase belum diisi di kode.');
+    return;
+  }
   try {
-    sb = supabase.createClient(url, key);
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     await loadAll();
     renderPage();
-  } catch(e) {
-    showToast('Gagal terhubung: ' + e.message, 'error');
-    showSetupScreen();
+  } catch (e) {
+    console.error(e);
+    showNotReady('Gagal terhubung ke database: ' + (e.message || e));
   }
 }
 
-function showSetupScreen() {
+function showNotReady(msg) {
   document.getElementById('mainContent').innerHTML = `
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title"><i class="bi bi-gear-fill"></i> Setup Koneksi Database</span>
-    </div>
-    <div class="card-body" style="max-width:640px;margin:0 auto">
-      <p style="font-size:14px;color:var(--gray-700);margin-bottom:16px">
-        Aplikasi ini menggunakan <strong>Supabase</strong> sebagai database agar data dapat diakses dari perangkat mana saja secara real-time.
-      </p>
-
-      <div class="setup-step">
-        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
-          <span class="step-num">1</span> Daftar / Login Supabase
-        </div>
-        <p style="font-size:13px">Buka <a href="https://supabase.com" target="_blank" style="color:var(--maroon);font-weight:600">supabase.com</a> lalu login menggunakan akun GitHub.</p>
+    <div class="card"><div class="card-body">
+      <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <strong>Dashboard belum siap</strong>
+        <p style="margin-top:8px">${esc(msg)}</p>
       </div>
-
-      <div class="setup-step">
-        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
-          <span class="step-num">2</span> Buat Project Baru
-        </div>
-        <p style="font-size:13px">Klik <strong>New Project</strong>, beri nama <code>lt3-tubaba</code>, pilih region terdekat, lalu klik <strong>Create new project</strong>.</p>
-      </div>
-
-      <div class="setup-step">
-        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
-          <span class="step-num">3</span> Jalankan SQL di SQL Editor
-        </div>
-        <p style="font-size:13px;margin-bottom:8px">Buka <strong>SQL Editor</strong> di Supabase, klik <strong>New Query</strong>, paste SQL berikut, lalu klik <strong>Run</strong>:</p>
-        <textarea readonly style="font-family:monospace;font-size:11px;height:220px;background:#1e1e2e;color:#a6e3a1;border-radius:8px;padding:12px;border:none;width:100%;resize:vertical">create table if not exists peserta (
-  id text primary key,
-  kapling text, regu text, kwarran text, kategori text,
-  created_at timestamptz default now()
-);
-create table if not exists cabang (
-  id text primary key,
-  nama text, aktif boolean default true,
-  created_at timestamptz default now()
-);
-create table if not exists nilai (
-  id text primary key,
-  peserta_id text references peserta(id) on delete cascade,
-  cabang_id text references cabang(id) on delete cascade,
-  nilai numeric, kategori text,
-  updated_at timestamptz default now()
-);
-alter table peserta enable row level security;
-alter table cabang enable row level security;
-alter table nilai enable row level security;
-create policy "public_all" on peserta for all using (true) with check (true);
-create policy "public_all" on cabang for all using (true) with check (true);
-create policy "public_all" on nilai for all using (true) with check (true);</textarea>
-      </div>
-
-      <div class="setup-step">
-        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
-          <span class="step-num">4</span> Ambil URL dan API Key
-        </div>
-        <p style="font-size:13px">Di Supabase, buka <strong>Project Settings</strong> &rarr; <strong>API</strong>, lalu salin <strong>Project URL</strong> dan <strong>anon public key</strong>.</p>
-      </div>
-
-      <div class="setup-step" style="border-color:var(--maroon)">
-        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:12px">
-          <span class="step-num">5</span> Hubungkan Aplikasi
-        </div>
-        <div class="form-group">
-          <div class="form-label">Supabase Project URL</div>
-          <input type="text" id="cfgUrl" placeholder="https://xxxxxxxx.supabase.co">
-        </div>
-        <div class="form-group">
-          <div class="form-label">Supabase Anon Key</div>
-          <input type="text" id="cfgKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-        </div>
-        <button class="btn btn-primary" style="width:100%" onclick="saveConfig()">
-          <i class="bi bi-plug-fill"></i> Hubungkan dan Mulai
-        </button>
-        <div id="cfgErr" style="color:#dc2626;font-size:12px;margin-top:8px"></div>
-      </div>
-    </div>
-  </div>`;
-}
-
-async function saveConfig() {
-  const url = document.getElementById('cfgUrl')?.value.trim();
-  const key = document.getElementById('cfgKey')?.value.trim();
-  if (!url || !key) { document.getElementById('cfgErr').textContent = 'URL dan Key wajib diisi.'; return; }
-  if (!url.startsWith('https://')) { document.getElementById('cfgErr').textContent = 'URL harus diawali https://'; return; }
-  document.getElementById('cfgErr').textContent = 'Menghubungkan...';
-  try {
-    sb = supabase.createClient(url, key);
-    const {error} = await sb.from('peserta').select('id').limit(1);
-    if (error) throw error;
-    localStorage.setItem('sb_url', url);
-    localStorage.setItem('sb_key', key);
-    await loadAll();
-    renderPage();
-    showToast('Berhasil terhubung ke Supabase!', 'success');
-  } catch(e) {
-    document.getElementById('cfgErr').textContent = 'Gagal: ' + (e.message || 'Periksa URL dan Key.');
-  }
+    </div></div>`;
 }
 
 // ===================== LOAD DATA =====================
@@ -487,25 +437,28 @@ async function loadAll() {
     sb.from('cabang').select('*').order('created_at'),
     sb.from('nilai').select('*'),
   ]);
+  for (const r of [pr, cr, nr]) if (r.error) throw r.error;
   appData.peserta = pr.data || [];
   appData.cabang = cr.data || [];
-  appData.nilai = (nr.data || []).map(n => ({...n, pesertaId: n.peserta_id, cabangId: n.cabang_id}));
+  appData.nilai = (nr.data || []).map(n => ({...n, nilai: Number(n.nilai), pesertaId: n.peserta_id, cabangId: n.cabang_id}));
   if (!appData.peserta.length) await seedPeserta();
 }
 
 async function seedPeserta() {
   const {error} = await sb.from('peserta').insert(INIT_PESERTA);
-  if (!error) appData.peserta = [...INIT_PESERTA];
+  if (error) throw error;
+  appData.peserta = [...INIT_PESERTA];
 }
 
 // ===================== AUTH =====================
-function showLogin() { document.getElementById('loginScreen').style.display = 'flex'; }
+function showLogin() { document.getElementById('loginErr').innerHTML = ''; document.getElementById('loginScreen').style.display = 'flex'; }
 function closeLogin() { document.getElementById('loginScreen').style.display = 'none'; }
 function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
   if (u === ADMIN_USER && p === ADMIN_PASS) {
     isAdmin = true; closeLogin();
+    document.getElementById('loginPass').value = '';
     document.getElementById('loginBtn').style.display = 'none';
     document.getElementById('logoutBtn').style.display = '';
     showToast('Login berhasil. Selamat datang, Admin.', 'success');
@@ -530,6 +483,7 @@ function showPage(p) {
   renderPage();
 }
 function renderPage() {
+  if (!sb) return;
   const main = document.getElementById('mainContent');
   if (currentPage === 'peserta') {
     main.innerHTML = renderPeserta();
@@ -556,7 +510,7 @@ function renderPeserta() {
         <input type="text" id="searchRegu" placeholder="Cari nama regu..." oninput="filterPeserta()">
         <select id="filterKwarran" onchange="filterPeserta()">
           <option value="">Semua Kwarran</option>
-          ${[...new Set(appData.peserta.map(p => p.kwarran))].sort().map(k => `<option value="${k}">${k}</option>`).join('')}
+          ${[...new Set(appData.peserta.map(p => p.kwarran))].sort().map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('')}
         </select>
       </div>
       <div id="pesertaTable"></div>
@@ -580,10 +534,10 @@ function renderPesertaTable(list) {
     <thead><tr><th>No</th><th>ID</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th>${isAdmin ? '<th>Aksi</th>' : ''}</tr></thead>
     <tbody>${list.map((p, i) => `<tr>
       <td>${i + 1}</td>
-      <td><span class="badge badge-gold">${p.id}</span></td>
-      <td>${p.kapling}</td>
-      <td><strong>${p.regu}</strong></td>
-      <td>${p.kwarran}</td>
+      <td><span class="badge badge-gold">${esc(p.id)}</span></td>
+      <td>${esc(p.kapling)}</td>
+      <td><strong>${esc(p.regu)}</strong></td>
+      <td>${esc(p.kwarran)}</td>
       ${isAdmin ? `<td style="white-space:nowrap">
         <button class="btn btn-sm btn-outline" onclick="modalEditPeserta('${p.id}')"><i class="bi bi-pencil-fill"></i></button>
         <button class="btn btn-sm btn-danger" onclick="confirmHapusPeserta('${p.id}')"><i class="bi bi-trash-fill"></i></button>
@@ -609,37 +563,46 @@ async function savePeserta() {
   if (appData.peserta.find(p => p.id === id)) { showToast('ID sudah ada.', 'error'); return; }
   const data = {id, kapling:kap, regu:reg, kwarran:kw, kategori:kat};
   const {error} = await sb.from('peserta').insert(data);
-  if (error) { showToast('Gagal simpan: ' + error.message, 'error'); return; }
+  if (error) { showToast('Gagal simpan: ' + esc(error.message), 'error'); return; }
   appData.peserta.push(data);
+  currentCat = kat;
   closeModal(); showToast('Peserta berhasil ditambahkan.', 'success'); renderPage();
 }
 function modalEditPeserta(id) {
   const p = appData.peserta.find(x => x.id === id); if (!p) return;
   openModal('<i class="bi bi-pencil-square"></i> Edit Peserta', `
-    <div class="form-group"><div class="form-label">ID</div><input type="text" value="${p.id}" disabled style="background:#f4f4f5;color:var(--gray-500)"></div>
+    <div class="form-group"><div class="form-label">ID</div><input type="text" value="${esc(p.id)}" disabled style="background:#f4f4f5;color:var(--gray-500)"></div>
     <div class="form-group"><div class="form-label">Kategori</div><select id="mKat">${CATEGORIES.map(c => `<option ${c === p.kategori ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
-    <div class="form-group"><div class="form-label">Kapling</div><input type="text" id="mKapling" value="${p.kapling}"></div>
-    <div class="form-group"><div class="form-label">Nama Regu</div><input type="text" id="mRegu" value="${p.regu}"></div>
-    <div class="form-group"><div class="form-label">Kwarran</div><input type="text" id="mKwarran" value="${p.kwarran}"></div>
+    <div class="form-group"><div class="form-label">Kapling</div><input type="text" id="mKapling" value="${esc(p.kapling)}"></div>
+    <div class="form-group"><div class="form-label">Nama Regu</div><input type="text" id="mRegu" value="${esc(p.regu)}"></div>
+    <div class="form-group"><div class="form-label">Kwarran</div><input type="text" id="mKwarran" value="${esc(p.kwarran)}"></div>
   `, [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-check-lg"></i> Simpan',cls:'btn-primary',fn:`updatePeserta('${id}')`}]);
 }
 async function updatePeserta(id) {
   const p = appData.peserta.find(x => x.id === id); if (!p) return;
-  const up = {kategori:document.getElementById('mKat')?.value, kapling:document.getElementById('mKapling')?.value.trim(), regu:document.getElementById('mRegu')?.value.trim().toUpperCase(), kwarran:document.getElementById('mKwarran')?.value.trim().toUpperCase()};
+  const up = {
+    kategori: document.getElementById('mKat')?.value,
+    kapling: document.getElementById('mKapling')?.value.trim(),
+    regu: document.getElementById('mRegu')?.value.trim().toUpperCase(),
+    kwarran: document.getElementById('mKwarran')?.value.trim().toUpperCase()
+  };
+  if (!up.kapling || !up.regu || !up.kwarran) { showToast('Semua field wajib diisi.', 'error'); return; }
   const {error} = await sb.from('peserta').update(up).eq('id', id);
-  if (error) { showToast('Gagal: ' + error.message, 'error'); return; }
+  if (error) { showToast('Gagal: ' + esc(error.message), 'error'); return; }
   Object.assign(p, up);
   closeModal(); showToast('Peserta berhasil diperbarui.', 'success'); renderPage();
 }
 function confirmHapusPeserta(id) {
   const p = appData.peserta.find(x => x.id === id); if (!p) return;
   openModal('<i class="bi bi-trash-fill"></i> Konfirmasi Hapus',
-    `<p>Hapus peserta <strong>${p.regu}</strong> (${p.id})?</p><p class="hint" style="margin-top:6px"><i class="bi bi-info-circle"></i> Semua nilai peserta ini akan ikut terhapus.</p>`,
+    `<p>Hapus peserta <strong>${esc(p.regu)}</strong> (${esc(p.id)})?</p><p class="hint" style="margin-top:6px"><i class="bi bi-info-circle"></i> Semua nilai peserta ini akan ikut terhapus.</p>`,
     [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-trash-fill"></i> Hapus',cls:'btn-danger',fn:`hapusPeserta('${id}')`}]);
 }
 async function hapusPeserta(id) {
-  await sb.from('nilai').delete().eq('peserta_id', id);
-  await sb.from('peserta').delete().eq('id', id);
+  const r1 = await sb.from('nilai').delete().eq('peserta_id', id);
+  if (r1.error) { showToast('Gagal: ' + esc(r1.error.message), 'error'); return; }
+  const r2 = await sb.from('peserta').delete().eq('id', id);
+  if (r2.error) { showToast('Gagal: ' + esc(r2.error.message), 'error'); return; }
   appData.peserta = appData.peserta.filter(p => p.id !== id);
   appData.nilai = appData.nilai.filter(n => n.pesertaId !== id);
   closeModal(); showToast('Peserta berhasil dihapus.', 'success'); renderPage();
@@ -669,7 +632,7 @@ function renderNilai() {
             <div class="form-label"><i class="bi bi-trophy-fill"></i> Langkah 2: Cabang Lomba</div>
             <select id="cabangSelect">
               <option value="">-- Pilih Cabang --</option>
-              ${cabangAktif.map(c => `<option value="${c.id}">${c.nama}</option>`).join('')}
+              ${cabangAktif.map(c => `<option value="${c.id}">${esc(c.nama)}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -688,7 +651,7 @@ function renderNilai() {
         </button>
         ${appData.cabang.length ? appData.cabang.map(c => `
         <div class="cabang-item">
-          <span class="cabang-nama">${c.nama}</span>
+          <span class="cabang-nama">${esc(c.nama)}</span>
           <span class="badge ${c.aktif !== false ? 'badge-green' : 'badge-gray'}">${c.aktif !== false ? 'Aktif' : 'Nonaktif'}</span>
           <button class="btn btn-sm btn-outline" onclick="toggleCabang('${c.id}')" title="Toggle status"><i class="bi bi-arrow-left-right"></i></button>
           <button class="btn btn-sm btn-outline" onclick="modalEditCabang('${c.id}')"><i class="bi bi-pencil-fill"></i></button>
@@ -713,13 +676,13 @@ function onCabangChange() {
     if (acts) acts.style.display = 'none'; return;
   }
   const peserta = appData.peserta.filter(p => p.kategori === cat);
-  if (!peserta.length) { wrap.innerHTML = '<div class="empty-state">Tidak ada peserta di kategori ini.</div>'; return; }
+  if (!peserta.length) { wrap.innerHTML = '<div class="empty-state">Tidak ada peserta di kategori ini.</div>'; if (acts) acts.style.display = 'none'; return; }
   if (acts) acts.style.display = 'flex';
   wrap.innerHTML = `<div class="tbl-wrap"><table>
     <thead><tr><th>No</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th><th>Nilai (0-100)</th></tr></thead>
     <tbody>${peserta.map((p, i) => {
       const ex = appData.nilai.find(n => n.pesertaId === p.id && n.cabangId === cabId);
-      return `<tr><td>${i+1}</td><td>${p.kapling}</td><td><strong>${p.regu}</strong></td><td>${p.kwarran}</td>
+      return `<tr><td>${i+1}</td><td>${esc(p.kapling)}</td><td><strong>${esc(p.regu)}</strong></td><td>${esc(p.kwarran)}</td>
         <td><input type="number" class="score-input" id="score_${p.id}" min="0" max="100" step="0.01" value="${ex ? ex.nilai : ''}" placeholder="—"></td></tr>`;
     }).join('')}</tbody></table></div>`;
 }
@@ -728,19 +691,19 @@ async function simpanNilai() {
   const cat = document.getElementById('catSelect')?.value || currentCat;
   if (!cabId) { showToast('Pilih cabang lomba terlebih dahulu.', 'error'); return; }
   const peserta = appData.peserta.filter(p => p.kategori === cat);
-  const upserts = []; let skipped = 0;
+  const upserts = [];
   for (const p of peserta) {
     const inp = document.getElementById('score_' + p.id);
-    if (!inp || inp.value === '') { skipped++; continue; }
+    if (!inp || inp.value === '') continue;
     const val = parseFloat(inp.value);
-    if (isNaN(val) || val < 0 || val > 100) { showToast(`Nilai ${p.regu} harus antara 0-100.`, 'error'); return; }
-    upserts.push({id: p.id+'_'+cabId, peserta_id:p.id, cabang_id:cabId, nilai:val, kategori:cat, updated_at:new Date().toISOString()});
+    if (isNaN(val) || val < 0 || val > 100) { showToast(`Nilai ${esc(p.regu)} harus antara 0-100.`, 'error'); return; }
+    upserts.push({id: p.id + '_' + cabId, peserta_id: p.id, cabang_id: cabId, nilai: val, kategori: cat, updated_at: new Date().toISOString()});
   }
   if (!upserts.length) { showToast('Tidak ada nilai yang diisi.', 'info'); return; }
   const {error} = await sb.from('nilai').upsert(upserts, {onConflict:'id'});
-  if (error) { showToast('Gagal menyimpan: ' + error.message, 'error'); return; }
+  if (error) { showToast('Gagal menyimpan: ' + esc(error.message), 'error'); return; }
   for (const u of upserts) {
-    const mapped = {...u, pesertaId:u.peserta_id, cabangId:u.cabang_id};
+    const mapped = {...u, pesertaId: u.peserta_id, cabangId: u.cabang_id};
     const idx = appData.nilai.findIndex(n => n.id === u.id);
     if (idx >= 0) appData.nilai[idx] = mapped; else appData.nilai.push(mapped);
   }
@@ -760,39 +723,41 @@ async function saveCabang() {
   const id = 'cab_' + Date.now();
   const data = {id, nama, aktif:true, created_at:new Date().toISOString()};
   const {error} = await sb.from('cabang').insert(data);
-  if (error) { showToast('Gagal: ' + error.message, 'error'); return; }
+  if (error) { showToast('Gagal: ' + esc(error.message), 'error'); return; }
   appData.cabang.push(data);
   closeModal(); showToast('Cabang lomba ditambahkan.', 'success'); renderPage();
 }
 function modalEditCabang(id) {
   const c = appData.cabang.find(x => x.id === id); if (!c) return;
   openModal('<i class="bi bi-pencil-square"></i> Edit Cabang Lomba',
-    `<div class="form-group"><div class="form-label">Nama Cabang Lomba</div><input type="text" id="mCabangNama" value="${c.nama}"></div>`,
+    `<div class="form-group"><div class="form-label">Nama Cabang Lomba</div><input type="text" id="mCabangNama" value="${esc(c.nama)}"></div>`,
     [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-check-lg"></i> Simpan',cls:'btn-primary',fn:`updateCabang('${id}')`}]);
 }
 async function updateCabang(id) {
   const nama = document.getElementById('mCabangNama')?.value.trim();
   if (!nama) { showToast('Nama tidak boleh kosong.', 'error'); return; }
   const {error} = await sb.from('cabang').update({nama}).eq('id', id);
-  if (error) { showToast('Gagal: ' + error.message, 'error'); return; }
+  if (error) { showToast('Gagal: ' + esc(error.message), 'error'); return; }
   appData.cabang.find(x => x.id === id).nama = nama;
   closeModal(); showToast('Cabang diperbarui.', 'success'); renderPage();
 }
 async function toggleCabang(id) {
   const c = appData.cabang.find(x => x.id === id); if (!c) return;
   const aktif = c.aktif === false ? true : false;
-  await sb.from('cabang').update({aktif}).eq('id', id);
+  const {error} = await sb.from('cabang').update({aktif}).eq('id', id);
+  if (error) { showToast('Gagal: ' + esc(error.message), 'error'); return; }
   c.aktif = aktif; renderPage();
 }
 function confirmHapusCabang(id) {
   const c = appData.cabang.find(x => x.id === id); if (!c) return;
-  if (appData.nilai.some(n => n.cabangId === id)) { showToast('Cabang ini sudah memiliki data nilai dan tidak dapat dihapus.', 'error'); return; }
+  if (appData.nilai.some(n => n.cabangId === id)) { showToast('Cabang ini sudah memiliki data nilai dan tidak dapat dihapus. Nonaktifkan saja.', 'error'); return; }
   openModal('<i class="bi bi-trash-fill"></i> Konfirmasi Hapus',
-    `<p>Hapus cabang lomba <strong>${c.nama}</strong>?</p>`,
+    `<p>Hapus cabang lomba <strong>${esc(c.nama)}</strong>?</p>`,
     [{label:'<i class="bi bi-x-lg"></i> Batal',cls:'btn-secondary',fn:'closeModal()'},{label:'<i class="bi bi-trash-fill"></i> Hapus',cls:'btn-danger',fn:`hapusCabang('${id}')`}]);
 }
 async function hapusCabang(id) {
-  await sb.from('cabang').delete().eq('id', id);
+  const {error} = await sb.from('cabang').delete().eq('id', id);
+  if (error) { showToast('Gagal: ' + esc(error.message), 'error'); return; }
   appData.cabang = appData.cabang.filter(c => c.id !== id);
   closeModal(); showToast('Cabang dihapus.', 'success'); renderPage();
 }
@@ -813,56 +778,33 @@ function switchCatDash(c) {
   renderDashContent(c);
 }
 function initDashboard() { renderDashContent(currentCat); }
+
 function renderDashContent(cat) {
   const wrap = document.getElementById('dashContent'); if (!wrap) return;
-  const peserta = appData.peserta.filter(p => p.kategori === cat);
-  const cabang = appData.cabang.filter(c => c.aktif !== false);
-  const nilaiCat = appData.nilai.filter(n => n.kategori === cat);
-  const totalNilai = nilaiCat.length;
-  const pesertaDinilai = new Set(nilaiCat.map(n => n.pesertaId)).size;
-  const belumDinilai = peserta.length - pesertaDinilai;
-
+  const {peserta, cabang, nilaiCat, rekap} = buildRekap(cat);
+  const belumDinilai = rekap.filter(r => r.jumlahNilai === 0).length;
   const chartData = cabang.map(c => {
-    const vals = nilaiCat.filter(n => n.cabangId === c.id);
-    const avg = vals.length ? (vals.reduce((s, v) => s + v.nilai, 0) / vals.length).toFixed(1) : null;
-    return {nama:c.nama, avg, count:vals.length};
+    const v = nilaiCat.filter(n => n.cabangId === c.id).map(n => n.nilai);
+    return {nama: c.nama, avg: v.length ? xRound(xSum(v) / v.length, 2) : null};
   }).filter(d => d.avg !== null);
-  const maxAvg = chartData.length ? Math.max(...chartData.map(d => parseFloat(d.avg))) : 100;
-
-  const rekap = peserta.map(p => {
-    const pNilai = nilaiCat.filter(n => n.pesertaId === p.id);
-    const cabangNilai = {};
-    pNilai.forEach(n => cabangNilai[n.cabangId] = n.nilai);
-    return {...p, total:pNilai.reduce((s, n) => s + n.nilai, 0), cabangNilai, jumlahNilai:pNilai.length};
-  }).sort((a, b) => b.total - a.total);
-
-  let rank = 1;
-  for (let i = 0; i < rekap.length; i++) {
-    if (i > 0 && rekap[i].total === rekap[i-1].total) rekap[i].rank = rekap[i-1].rank;
-    else rekap[i].rank = rank;
-    rank++;
-  }
   const isFinal = cabang.length > 0 && peserta.length > 0 && rekap.every(r => r.jumlahNilai === cabang.length);
 
   wrap.innerHTML = `
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-icon"><i class="bi bi-people-fill"></i></div><div class="stat-num">${peserta.length}</div><div class="stat-label">Total Regu</div></div>
     <div class="stat-card"><div class="stat-icon"><i class="bi bi-trophy-fill"></i></div><div class="stat-num">${cabang.length}</div><div class="stat-label">Cabang Lomba</div></div>
-    <div class="stat-card"><div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div><div class="stat-num">${totalNilai}</div><div class="stat-label">Nilai Masuk</div></div>
+    <div class="stat-card"><div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div><div class="stat-num">${nilaiCat.length}</div><div class="stat-label">Nilai Masuk</div></div>
     <div class="stat-card"><div class="stat-icon"><i class="bi bi-clock-fill"></i></div><div class="stat-num">${belumDinilai}</div><div class="stat-label">Belum Dinilai</div></div>
   </div>
 
   ${chartData.length ? `<div class="chart-wrap">
-    <div class="chart-title"><i class="bi bi-bar-chart-fill"></i> Rata-rata Nilai per Cabang Lomba &mdash; ${cat}</div>
+    <div class="chart-title"><i class="bi bi-bar-chart-fill"></i> Rata-rata Nilai per Cabang Lomba &mdash; ${esc(cat)}</div>
     <div class="chart-container">
-      ${chartData.map(d => {
-        const h = maxAvg > 0 ? (parseFloat(d.avg) / maxAvg) * 180 : 4;
-        return `<div class="chart-bar-wrap" style="position:relative;padding-top:24px">
-          <span class="chart-val">${d.avg}</span>
-          <div class="chart-bar" style="height:${h}px"></div>
-          <span class="chart-label">${d.nama}</span>
-        </div>`;
-      }).join('')}
+      ${chartData.map(d => `<div class="chart-bar-wrap" style="position:relative;padding-top:24px">
+        <span class="chart-val">${fmt2(d.avg)}</span>
+        <div class="chart-bar" style="height:${Math.max(4, d.avg / 100 * 180)}px"></div>
+        <span class="chart-label">${esc(d.nama)}</span>
+      </div>`).join('')}
     </div>
   </div>` : `<div class="empty-state" style="margin-bottom:16px"><div class="empty-icon"><i class="bi bi-bar-chart"></i></div>Belum ada data nilai untuk diagram.</div>`}
 
@@ -871,7 +813,7 @@ function renderDashContent(cat) {
     <div class="card-body">
       <select id="detailCabangSel" onchange="renderDetailCabang('${cat}',this.value)" style="max-width:280px">
         <option value="">-- Pilih Cabang Lomba --</option>
-        ${cabang.map(c => `<option value="${c.id}">${c.nama}</option>`).join('')}
+        ${cabang.map(c => `<option value="${c.id}">${esc(c.nama)}</option>`).join('')}
       </select>
       <div id="detailCabangWrap" style="margin-top:12px"></div>
     </div>
@@ -879,7 +821,7 @@ function renderDashContent(cat) {
 
   <div class="card" style="border:1px solid var(--gray-200);margin-top:16px">
     <div class="card-header">
-      <span class="card-title"><i class="bi bi-trophy-fill"></i> Rekapitulasi dan Peringkat &mdash; ${cat}</span>
+      <span class="card-title"><i class="bi bi-trophy-fill"></i> Rekapitulasi dan Peringkat &mdash; ${esc(cat)}</span>
       <span class="badge ${isFinal ? 'badge-green' : 'badge-gold'}">
         <i class="bi bi-${isFinal ? 'check-circle-fill' : 'clock-fill'}"></i> ${isFinal ? 'FINAL' : 'SEMENTARA'}
       </span>
@@ -888,17 +830,18 @@ function renderDashContent(cat) {
       <div class="tbl-wrap"><table>
         <thead><tr>
           <th>Peringkat</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th>
-          ${cabang.map(c => `<th style="min-width:80px">${c.nama}</th>`).join('')}
+          ${cabang.map(c => `<th style="min-width:80px">${esc(c.nama)}</th>`).join('')}
           <th>Total</th>
         </tr></thead>
         <tbody>${rekap.map(p => {
-          const rCls = p.rank===1?'rank-1':p.rank===2?'rank-2':p.rank===3?'rank-3':'';
-          const rB = p.rank===1?'r1':p.rank===2?'r2':p.rank===3?'r3':'rn';
+          const r = p.rank;
+          const rCls = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : '';
+          const rB = r === 1 ? 'r1' : r === 2 ? 'r2' : r === 3 ? 'r3' : 'rn';
           return `<tr class="${rCls}">
-            <td style="text-align:center"><span class="rank-badge ${rB}">${p.rank}</span></td>
-            <td>${p.kapling}</td><td><strong>${p.regu}</strong></td><td>${p.kwarran}</td>
-            ${cabang.map(c => { const v = p.cabangNilai[c.id]; return `<td style="text-align:center">${v !== undefined ? v : '<span class="badge badge-gray">—</span>'}</td>`; }).join('')}
-            <td style="text-align:center;font-weight:800;color:var(--maroon)">${p.jumlahNilai > 0 ? p.total : '-'}</td>
+            <td style="text-align:center"><span class="rank-badge ${rB}">${r ?? '-'}</span></td>
+            <td>${esc(p.kapling)}</td><td><strong>${esc(p.regu)}</strong></td><td>${esc(p.kwarran)}</td>
+            ${cabang.map(c => { const v = p.cabangNilai[c.id]; return `<td style="text-align:center">${v !== undefined ? fmt2(v) : '<span class="badge badge-gray">—</span>'}</td>`; }).join('')}
+            <td style="text-align:center;font-weight:800;color:var(--maroon)">${p.jumlahNilai > 0 ? fmt2(p.total) : '-'}</td>
           </tr>`;
         }).join('')}</tbody>
       </table></div>
@@ -907,21 +850,24 @@ function renderDashContent(cat) {
 }
 
 function renderDetailCabang(cat, cabId) {
-  const wrap = document.getElementById('detailCabangWrap'); if (!wrap || !cabId) { if(wrap) wrap.innerHTML=''; return; }
+  const wrap = document.getElementById('detailCabangWrap');
+  if (!wrap) return;
+  if (!cabId) { wrap.innerHTML = ''; return; }
   const peserta = appData.peserta.filter(p => p.kategori === cat);
-  const vals = appData.nilai.filter(n => n.cabangId === cabId && n.kategori === cat);
-  const totalNilai = vals.reduce((s, n) => s + n.nilai, 0);
+  const ids = new Set(peserta.map(p => p.id));
+  const vals = appData.nilai.filter(n => n.cabangId === cabId && ids.has(n.pesertaId));
+  const total = xSum(vals.map(n => n.nilai));
   const dinilai = vals.length;
-  const avg = dinilai ? (totalNilai / dinilai).toFixed(2) : '—';
+  const avg = dinilai ? fmt2(total / dinilai) : '—';
   wrap.innerHTML = `<div class="tbl-wrap"><table>
     <thead><tr><th>No</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th><th>Nilai</th></tr></thead>
     <tbody>${peserta.map((p, i) => {
       const v = vals.find(n => n.pesertaId === p.id);
-      return `<tr><td>${i+1}</td><td>${p.kapling}</td><td><strong>${p.regu}</strong></td><td>${p.kwarran}</td>
-        <td style="text-align:center">${v !== undefined ? `<strong>${v.nilai}</strong>` : '<span class="badge badge-gray">BELUM DINILAI</span>'}</td></tr>`;
+      return `<tr><td>${i + 1}</td><td>${esc(p.kapling)}</td><td><strong>${esc(p.regu)}</strong></td><td>${esc(p.kwarran)}</td>
+        <td style="text-align:center">${v ? `<strong>${fmt2(v.nilai)}</strong>` : '<span class="badge badge-gray">BELUM DINILAI</span>'}</td></tr>`;
     }).join('')}</tbody></table></div>
   <div class="divider-info">
-    <span><i class="bi bi-calculator"></i> Total: <strong>${totalNilai}</strong></span>
+    <span><i class="bi bi-calculator"></i> Total: <strong>${fmt2(total)}</strong></span>
     <span><i class="bi bi-check-circle-fill" style="color:#166534"></i> Dinilai: <strong>${dinilai}</strong></span>
     <span><i class="bi bi-clock-fill" style="color:#92400e"></i> Belum: <strong>${peserta.length - dinilai}</strong></span>
     <span><i class="bi bi-graph-up"></i> Rata-rata: <strong>${avg}</strong></span>
@@ -937,23 +883,15 @@ function renderFullscreen() {
   <div id="fsContent"></div>`;
   fsRenderCat(currentCat);
 }
-function fsSwitch(c) { document.querySelectorAll('.fs-cat-tab').forEach(t => t.classList.toggle('active', t.textContent === c)); fsRenderCat(c); }
+function fsSwitch(c) {
+  currentCat = c;
+  document.querySelectorAll('.fs-cat-tab').forEach(t => t.classList.toggle('active', t.textContent.trim() === c));
+  fsRenderCat(c);
+}
 function fsRenderCat(cat) {
   const wrap = document.getElementById('fsContent'); if (!wrap) return;
-  const peserta = appData.peserta.filter(p => p.kategori === cat);
-  const cabang = appData.cabang.filter(c => c.aktif !== false);
-  const nilaiCat = appData.nilai.filter(n => n.kategori === cat);
-  const dinilai = new Set(nilaiCat.map(n => n.pesertaId)).size;
-  const rekap = peserta.map(p => {
-    const pN = nilaiCat.filter(n => n.pesertaId === p.id);
-    return {...p, total:pN.reduce((s,n)=>s+n.nilai,0), jumlahNilai:pN.length};
-  }).sort((a,b) => b.total - a.total);
-  let rank = 1;
-  for (let i = 0; i < rekap.length; i++) {
-    if (i > 0 && rekap[i].total === rekap[i-1].total) rekap[i].rank = rekap[i-1].rank;
-    else rekap[i].rank = rank;
-    rank++;
-  }
+  const {peserta, cabang, rekap} = buildRekap(cat);
+  const dinilai = rekap.filter(r => r.jumlahNilai > 0).length;
   wrap.innerHTML = `
   <div class="fs-stats">
     <div class="fs-stat"><div class="fs-stat-num">${peserta.length}</div><div class="fs-stat-label">Total Regu</div></div>
@@ -963,11 +901,11 @@ function fsRenderCat(cat) {
   <div class="tbl-wrap"><table style="font-size:15px">
     <thead><tr><th>Peringkat</th><th>Kapling</th><th>Nama Regu</th><th>Kwarran</th><th>Total Nilai</th></tr></thead>
     <tbody>${rekap.map(p => `<tr>
-      <td style="text-align:center;font-size:20px;font-weight:900;color:var(--gold)">${p.rank}</td>
-      <td style="color:white">${p.kapling}</td>
-      <td style="color:white;font-weight:700;font-size:16px">${p.regu}</td>
-      <td style="color:rgba(255,255,255,0.8)">${p.kwarran}</td>
-      <td style="text-align:center;font-size:24px;font-weight:900;color:var(--gold)">${p.jumlahNilai > 0 ? p.total : '-'}</td>
+      <td style="text-align:center;font-size:20px;font-weight:900;color:var(--gold)">${p.rank ?? '-'}</td>
+      <td style="color:white">${esc(p.kapling)}</td>
+      <td style="color:white;font-weight:700;font-size:16px">${esc(p.regu)}</td>
+      <td style="color:rgba(255,255,255,0.8)">${esc(p.kwarran)}</td>
+      <td style="text-align:center;font-size:24px;font-weight:900;color:var(--gold)">${p.jumlahNilai > 0 ? fmt2(p.total) : '-'}</td>
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
@@ -987,19 +925,13 @@ function showToast(msg, type = 'info') {
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');
   t.className = `toast toast-${type}`;
-  t.innerHTML = `<i class="bi bi-${icons[type]||'info-circle-fill'}"></i> ${msg}`;
+  t.innerHTML = `<i class="bi bi-${icons[type] || 'info-circle-fill'}"></i> <span>${msg}</span>`;
   c.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => t.remove(), 4500);
 }
 
 // ===================== BOOT =====================
-window.addEventListener('load', () => {
-  const savedUrl = localStorage.getItem('sb_url');
-  const savedKey = localStorage.getItem('sb_key');
-  if (savedUrl) window.SUPABASE_URL = savedUrl;
-  if (savedKey) window.SUPABASE_ANON_KEY = savedKey;
-  init();
-});
+window.addEventListener('load', init);
 </script>
 </body>
 </html>
